@@ -6,6 +6,22 @@
 
 #include "CycleTimer.h"
 
+#define DEBUG
+
+#ifdef DEBUG
+#define cudaCheckError(ans) { cudaAssert((ans), __FILE__, __LINE__); }
+inline void cudaAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+   if (code != cudaSuccess)
+   {
+      fprintf(stderr, "CUDA Error: %s at %s:%d\n",
+        cudaGetErrorString(code), file, line);
+      if (abort) exit(code);
+   }
+}
+#else
+#define cudaCheckError(ans) ans
+#endif
 
 // return GB/sec
 float GBPerSec(int bytes, float sec) {
@@ -93,6 +109,7 @@ void saxpyCuda(int N, float alpha, float* xarray, float* yarray, float* resultar
     // run CUDA kernel. (notice the <<< >>> brackets indicating a CUDA
     // kernel launch) Execution on the GPU occurs here.
     saxpy_kernel<<<blocks, threadsPerBlock>>>(N, alpha, device_x, device_y, device_result);
+    cudaCheckError( cudaDeviceSynchronize() );
 
     //
     // CS149 TODO: copy result from GPU back to CPU using cudaMemcpy
